@@ -1,5 +1,10 @@
 using System;
 using System.Linq;
+using AuthUsingCustomAttribute.Application.Attributes;
+using AuthUsingCustomAttribute.Application.DTOs;
+using AuthUsingCustomAttribute.Domain.Enums;
+using AuthUsingCustomAttribute.Infrastructure.Middlewares;
+using AuthUsingCustomAttribute.Infrastructure.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -46,7 +51,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(); 
 }
 
+app.UseMiddleware<AuthMiddleware>();
 
+
+app.MapPost("/token", (TokenRequestDto dto) =>
+{
+    var token = TokenService.GenerateToken(dto.UserId, dto.RoleId);
+    return Results.Ok(new { token });
+});
+
+app.MapGet("/admin", () => "Only for Admin or SuperAdmin")
+    .WithMetadata(new AuthorizeRolesAttribute(
+        UserRoleEnum.Admin, 
+        UserRoleEnum.SuperAdmin));
+
+app.MapGet("/public", () => "This is public");
 
 
 app.Run();
